@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistical Analysis - Brain Tumor Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var tumorCount = {{ tumor_count }};
+        var noTumorCount = {{ no_tumor_count }};
+
+        var data = google.visualization.arrayToDataTable([
+          ['Condition', 'Count'],
+          ['Tumor Detected', tumorCount],
+          ['No Tumor Detected', noTumorCount]
+        ]);
+
+        var options = {
+          backgroundColor: 'transparent',
+          colors: ['#ef4444', '#34d399'],
+          legend: { 
+              position: 'bottom', 
+              textStyle: { color: '#94a3b8', fontSize: 13 } 
+          },
+          pieHole: 0.4,
+          pieSliceBorderColor: 'rgba(255,255,255,0.1)',
+          pieSliceTextStyle: {
+            color: 'white',
+            fontName: 'Outfit',
+            fontSize: 14,
+            bold: true
+          },
+          chartArea: { width: '90%', height: '80%' },
+          tooltip: {
+            textStyle: { fontName: 'Outfit', fontSize: 14 },
+            showColorCode: true
+          },
+          animation: {
+            startup: true,
+            duration: 1000,
+            easing: 'out'
+          }
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+        chart.draw(data, options);
+
+        window.addEventListener('resize', function() {
+            chart.draw(data, options);
+        });
+      }
+    </script>
+    <style>
+        .stat-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 130px;
+        }
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 800;
+            margin: 0;
+        }
+        .stat-card p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin: 5px 0 0 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🔷 NAVBAR -->
+    <div class="navbar">
+        <h2>🧠 Brain Tumor Detection</h2>
+        <div class="menu">
+            <a href="/home">Home</a>
+            <a href="/preview">Preview</a>
+            <a href="/performance">Performance</a>
+            <a href="/chart">Chart</a>
+            <a href="/history">History</a>
+            {% if session.get('user_id') %}
+                <a href="/logout">Logout ({{ session.username }})</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 🔷 MAIN CONTENT -->
+    <div class="glass-card" style="max-width: 800px;">
+        <h1>Statistical Overview</h1>
+        <p>Your personal scan statistics based on real data from your account.</p>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards">
+            <div class="stat-card">
+                <p class="number" style="color: var(--accent-color);">{{ total }}</p>
+                <p>Total Scans</p>
+            </div>
+            <div class="stat-card">
+                <p class="number" style="color: #ef4444;">{{ tumor_count }}</p>
+                <p>Tumor Detected</p>
+            </div>
+            <div class="stat-card">
+                <p class="number" style="color: #34d399;">{{ no_tumor_count }}</p>
+                <p>No Tumor</p>
+            </div>
+        </div>
+
+        {% if total == 0 %}
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <p style="font-size: 18px;">No scan data yet. Upload a scan on the Preview page to get started.</p>
+            <a href="/preview" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: var(--accent-color); color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">Upload a Scan</a>
+        </div>
+        {% else %}
+        <!-- Chart Container -->
+        <div id="piechart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+
+        <div style="margin-top: 30px; text-align: left; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--card-border);">
+            <h3 style="color: var(--accent-color); margin-top: 0;">Insights</h3>
+            <ul style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 0;">
+                <li>You have run <strong>{{ total }}</strong> total scan(s) on this account.</li>
+                <li><strong>{{ tumor_count }}</strong> scan(s) detected signs of a brain tumor.</li>
+                <li><strong>{{ no_tumor_count }}</strong> scan(s) came back clear.</li>
+                <li>Most recent scan: <strong>{{ latest_scan }}</strong></li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+</body>
+</html>
+
+

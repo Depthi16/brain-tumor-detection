@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload MRI Scan - Brain Tumor Detection</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+    /* Loading Spinner Overlay */
+    #loading-overlay {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(8px);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .spinner {
+        width: 80px;
+        height: 80px;
+        border: 6px solid rgba(56, 189, 248, 0.2);
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 25px;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    #loading-overlay h2 {
+        font-size: 22px;
+        color: #f8fafc;
+        margin: 0 0 10px 0;
+    }
+    #loading-overlay p {
+        color: #94a3b8;
+        font-size: 15px;
+    }
+    .loading-dots::after {
+        content: '';
+        animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+        0%   { content: ''; }
+        25%  { content: '.'; }
+        50%  { content: '..'; }
+        75%  { content: '...'; }
+        100% { content: ''; }
+    }
+</style>
+</head>
+<body>
+
+<!-- 🔄 Loading Overlay -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <h2>Analyzing MRI Scan<span class="loading-dots"></span></h2>
+    <p>Running deep learning model — please wait.</p>
+</div>
+
+<div class="navbar">
+    <h2>🧠 Brain Tumor Detection</h2>
+    <div class="menu">
+        <a href="/home">Home</a>
+        <a href="/preview">Preview</a>
+        <a href="/performance">Performance</a>
+        <a href="/chart">Chart</a>
+        <a href="/history">History</a>
+        {% if session.get('user_id') %}
+            <a href="/logout">Logout ({{ session.username }})</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="glass-card">
+    <h1>Upload MRI Scan</h1>
+
+    <form id="predict-form" action="/predict" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+        <!-- ✅ PATIENT NAME -->
+        <input type="text" name="patient_name" placeholder="Patient Name (Optional)"><br><br>
+
+        <!-- Defaulting to MobileNetV2 -->
+        <input type="hidden" name="model_type" value="mobilenet">
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">Analyzing with <b>MobileNetV2</b> Deep Learning Architecture.</p>
+
+        <!-- ✅ FILE INPUT -->
+        <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--accent-color);">Upload MRI Scan</label>
+        <input type="file" name="image" accept="image/*" required><br><br>
+
+        <!-- ✅ IMAGE PREVIEW -->
+        <img id="preview" class="preview" alt="MRI Preview" style="display: none; max-width: 100%; border-radius: 10px; margin-bottom: 15px;"><br>
+
+        <!-- ✅ BUTTON -->
+        <button type="submit">Analyze Scan</button>
+    </form>
+</div>
+
+
+<!-- 🔷 SCRIPTS -->
+<script>
+document.querySelector("input[name='image']").onchange = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const img = document.getElementById("preview");
+            img.src = reader.result;
+            img.style.display = "block";
+        }
+        reader.readAsDataURL(file);
+    }
+};
+
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+}
+</script>
+</body>
+</html>
+
+

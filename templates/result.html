@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                margin: 0;
+                padding: 20mm;
+            }
+
+            .navbar,
+            .print-btn,
+            .menu,
+            .medical-note,
+            a[href="/"] {
+                display: none !important;
+            }
+
+            .glass-card {
+                background: white !important;
+                box-shadow: none !important;
+                border: 2px solid #333 !important;
+                padding: 40px !important;
+                margin: 0 !important;
+                width: 100% !important;
+                color: black !important;
+            }
+
+            h1,
+            h2,
+            h3,
+            p,
+            span,
+            strong {
+                color: black !important;
+                text-shadow: none !important;
+            }
+
+            .report-header {
+                border-bottom: 2px solid #333 !important;
+                margin-bottom: 30px !important;
+            }
+
+            .report-header h2,
+            .report-header p {
+                color: black !important;
+            }
+
+            img.preview {
+                border: 1px solid #333 !important;
+                max-width: 100% !important;
+                height: auto !important;
+                margin: 20px 0 !important;
+                display: block !important;
+            }
+
+            /* Add a print-only footer */
+            body::after {
+                content: "This is an automated AI report. Please consult a radiologist for clinical diagnosis.";
+                display: block;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                font-size: 10pt;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="navbar">
+        <h2>🧠 Brain Tumor Detection</h2>
+        <div class="menu">
+            <a href="/home">Home</a>
+            <a href="/preview">Preview</a>
+            <a href="/performance">Performance</a>
+            <a href="/chart">Chart</a>
+            <a href="/history">History</a>
+            {% if session.get('user_id') %}
+            <a href="/logout">Logout ({{ session.username }})</a>
+            {% else %}
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="glass-card">
+        {% if confidence > 0 %}
+        <div class="report-header"
+            style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: white;">Medical Scan Report</h2>
+            <p style="margin: 5px 0 0 0; color: white;"><strong>Patient Name:</strong> <span
+                    style="text-transform: capitalize;">{{ patient_name }}</span></p>
+            <p style="margin: 5px 0 0 0; color: white;"><strong>Date:</strong> {{ date }}</p>
+            {% if model_used %}
+            <p style="margin: 5px 0 0 0; color: white;"><strong>Model Used:</strong> {{ model_used }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <h1 style="margin-top: 0;">{{ result }}</h1>
+
+        {% if confidence > 0 %}
+        <p>Confidence: {{ confidence }}%</p>
+
+        {% if location %}
+        <div style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 10px; margin-top: 20px;">
+            <h3 style="color: #ffcccc; margin-top: 0; margin-bottom: 10px;">📍 Location: {{ location }}</h3>
+            <p style="color: white; font-size: 14px; margin: 0;">📝 {{ desc }}</p>
+        </div>
+        {% endif %}
+
+        {% if location %}
+        <img src="{{ image }}" class="preview" alt="Detected Image Scan"
+            style="margin-top: 20px; border: 2px solid #ff4d4d; border-radius: 10px; max-height: 300px; display: block; width: 100%; object-fit: contain;">
+        {% else %}
+        <img src="{{ image }}" class="preview" alt="Clean Image Scan"
+            style="margin-top: 20px; border: 2px solid #4CAF50; border-radius: 10px; max-height: 300px; display: block; width: 100%; object-fit: contain;">
+        {% endif %}
+
+
+
+        <br>
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <button onclick="window.print()" class="print-btn"
+                style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: white; color: black; border: none; border-radius: 5px; font-weight: bold;">📄
+                Download Medical Report</button>
+            <a href="/preview" class="print-btn"
+                style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid white; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 16px;">⬅️
+                Scan Another MRI</a>
+        </div>
+
+        {% else %}
+
+        {% if image %}
+        <img src="{{ image }}" class="preview"
+            style="margin-top: 20px; border: 2px solid #ff4d4d; border-radius: 10px; max-height: 300px;">
+        {% endif %}
+        <br><br>
+        <a href="/preview"
+            style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid white; border-radius: 5px; text-decoration: none; font-weight: bold;">⬅️
+            Try another image</a>
+
+        {% endif %}
+    </div>
+
+</body>
+
+</html>
+

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Brain Tumor Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(30, 27, 75, 0.9)), url("{{ url_for('static', filename='login_bg.png') }}") no-repeat center center fixed !important;
+            background-size: cover !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(56, 189, 248, 0.2);
+            border-radius: 24px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-card h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .auth-card p.subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 35px;
+            font-size: 15px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            transition: 0.3s;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 15px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .input-group input:focus + i {
+            color: var(--accent-color);
+        }
+
+        .auth-card button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .auth-card button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px rgba(14, 165, 233, 0.5);
+        }
+        
+        .glow-circle {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            top: -100px;
+            right: -100px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>🧠 Brain Tumor Detection</h2>
+    <div class="menu">
+        <a href="/home">Home</a>
+        <a href="/preview">Preview</a>
+        <a href="/performance">Performance</a>
+        <a href="/chart">Chart</a>
+        <a href="/history">History</a>
+        {% if session.get('user_id') %}
+            <a href="/logout">Logout ({{ session.username }})</a>
+        {% else %}
+            <a href="/login" style="color: var(--accent-color);">Login</a>
+            <a href="/register">Register</a>
+        {% endif %}
+    </div>
+    </div>
+</div>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="glow-circle"></div>
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Sign in to access advanced MRI analysis.</p>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); padding: 12px; margin-bottom: 25px; border-radius: 8px; text-align: left;">
+            {% for message in messages %}
+                <p style="margin: 0; color: #fca5a5; font-size: 14px;"><i class="fas fa-exclamation-circle"></i> {{ message }}</p>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username" required>
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Password" required>
+                <i class="fas fa-lock"></i>
+            </div>
+            
+            <button type="submit">Secure Login <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+        </form>
+
+        <p style="margin-top: 30px; font-size: 14px; color: var(--text-secondary);">
+            Don't have an account? <a href="/register" style="color: #38bdf8; text-decoration: none; font-weight: bold; transition: 0.2s;">Create one here</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>
+
+

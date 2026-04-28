@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brain Tumor Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(30, 27, 75, 0.8)), url("{{ url_for('static', filename='doctor_bg.png') }}") no-repeat center center fixed !important;
+            background-size: cover !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- 🔷 NAVBAR -->
+<div class="navbar">
+    <h2>🧠 Brain Tumor Detection</h2>
+    <div class="menu">
+        <a href="/home">Home</a>
+        <a href="/preview">Preview</a>
+        <a href="/performance">Performance</a>
+        <a href="/chart">Chart</a>
+        <a href="/history">History</a>
+        {% if session.get('user_id') %}
+            <a href="/logout">Logout ({{ session.username }})</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 🔷 MAIN CARD -->
+<div class="glass-card">
+    <h1>Welcome to Brain Tumor Detection</h1>
+    <p style="font-size: 1.2rem; margin-top: 20px;">Use our advanced Deep Learning model to analyze MRI scans for potential brain tumors.</p>
+    <br>
+    <a href="/preview" style="display: inline-block; padding: 12px 25px; background: var(--accent-color); color: white; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">Get Started</a>
+</div>
+
+</body>
+</html>
+

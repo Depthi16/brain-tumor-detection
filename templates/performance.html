@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Performance - Brain Tumor Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+        }
+
+        .metric-title {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            color: var(--accent-color);
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .confusion-matrix {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            color: var(--text-primary);
+        }
+
+        .matrix-table th, .matrix-table td {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            text-align: center;
+        }
+
+        .matrix-table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .cell-true {
+            background: rgba(52, 211, 153, 0.2);
+            color: var(--success);
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .cell-false {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        #model-selector {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            border: 1px solid var(--accent-color);
+            font-size: 16px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>🧠 Brain Tumor Detection</h2>
+    <div class="menu">
+        <a href="/home">Home</a>
+        <a href="/preview">Preview</a>
+        <a href="/performance">Performance</a>
+        <a href="/chart">Chart</a>
+        <a href="/history">History</a>
+        {% if session.get('user_id') %}
+            <a href="/logout">Logout ({{ session.username }})</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 750px;">
+    <h1>MobileNetV2 Performance Report</h1>
+    <p>Comprehensive evaluation metrics for the MobileNetV2 architecture on the brain tumor dataset.</p>
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-title">Accuracy</div>
+            <div class="metric-value" id="val-accuracy">96.3%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Precision</div>
+            <div class="metric-value" id="val-precision">95.8%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Recall</div>
+            <div class="metric-value" id="val-recall">97.1%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">F1-Measure</div>
+            <div class="metric-value" id="val-f1">96.4%</div>
+        </div>
+    </div>
+
+    <!-- Confusion Matrix -->
+    <div class="confusion-matrix">
+        <h3 style="margin-top: 0; color: var(--text-primary);" id="matrix-title">Confusion Matrix: MobileNet</h3>
+        <table class="matrix-table">
+            <tr>
+                <th>Actual \ Predicted</th>
+                <th>Tumor Detected</th>
+                <th>No Tumor</th>
+            </tr>
+            <tr>
+                <th>True Tumor</th>
+                <td class="cell-true" id="tp">142<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Positives</span></td>
+                <td class="cell-false" id="fn">4<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">False Negatives</span></td>
+            </tr>
+            <tr>
+                <th>True No Tumor</th>
+                <td class="cell-false" id="fp">7<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">False Positives</span></td>
+                <td class="cell-true" id="tn">165<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Negatives</span></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- Static metrics for MobileNetV2 -->
+
+</body>
+</html>
+
+
