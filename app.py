@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from fpdf import FPDF
 import io
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 from datetime import datetime
 import mysql.connector
@@ -31,11 +32,29 @@ def get_db():
 
 # Load Models
 models = {}
-if os.path.exists("mobilenet_model.h5"):
-    models['mobilenet'] = load_model("mobilenet_model.h5")
-    print("Model mobilenet loaded successfully from mobilenet_model.h5.")
-else:
-    print("Warning: Model not found at mobilenet_model.h5")
+def load_app_models():
+    try:
+        if os.path.exists("multiclass_model.h5"):
+            models['multiclass'] = load_model("multiclass_model.h5")
+            print("Multi-class model loaded.")
+        
+        # Binary models - prioritize EfficientNetB0
+        if os.path.exists("efficientnet_model.h5"):
+            models['efficientnet'] = load_model("efficientnet_model.h5")
+            print("EfficientNetB0 loaded.")
+        elif os.path.exists("mobilenet_model.h5"):
+            models['mobilenet'] = load_model("mobilenet_model.h5")
+            print("MobileNetV2 loaded.")
+        elif os.path.exists("resnet50_model.h5"):
+            try:
+                models['resnet50'] = load_model("resnet50_model.h5")
+                print("ResNet50 loaded.")
+            except Exception as e:
+                print(f"ResNet50 too large for memory, skipping: {e}")
+    except Exception as e:
+        print(f"Error loading models: {e}")
+
+load_app_models()
 
 def is_brain_mri(img):
     """Simple heuristics to determine if image is likely a brain MRI"""
@@ -58,6 +77,31 @@ def is_brain_mri(img):
         return False
         
     return True
+
+def draw_highlight(filepath, filename):
+    """Helper to draw tumor bounding box/contour"""
+    try:
+        orig_img = cv2.imread(filepath)
+        gray = cv2.cvtColor(orig_img, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        # Dynamic threshold based on image brightness
+        threshold_value = max(100, np.max(blur) * 0.7)
+        _, thresh = cv2.threshold(blur, threshold_value, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            c = max(contours, key=cv2.contourArea)
+            tumor_color = (100, 150, 255) # Light blue/orange
+            overlay = orig_img.copy()
+            cv2.drawContours(overlay, [c], -1, tumor_color, -1)
+            cv2.addWeighted(overlay, 0.4, orig_img, 0.6, 0, orig_img)
+            cv2.drawContours(orig_img, [c], -1, tumor_color, 2)
+        highlighted_filename = f"tumor_{filename}"
+        highlighted_filepath = os.path.join(app.config['UPLOAD_FOLDER'], highlighted_filename)
+        cv2.imwrite(highlighted_filepath, orig_img)
+        return url_for('static', filename=f"uploads/{highlighted_filename}")
+    except Exception as e:
+        print(f"Error drawing highlight: {e}")
+        return url_for('static', filename=f"uploads/{filename}")
 
 # ---------------- ENTRY POINT ----------------
 @app.route('/')
@@ -319,87 +363,105 @@ def predict():
                                patient_name=patient_name, 
                                date=date)
         
-        # Get the MobileNet model
-        model = models.get('mobilenet')
-
-        # Preprocess Image (128x128 for MobileNet)
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_resized = cv2.resize(img_rgb, (128, 128))
-        img_final = np.array(img_resized) / 255.0
-        img_final = np.expand_dims(img_final, axis=0)
-
-        # Predict
-        if model:
-            pred = model.predict(img_final)[0][0]
-            # categories: 0: tumor, 1: no_tumor
-            if pred < 0.5:
-                result = "Tumor Detected ⚠️"
-                confidence = round(float((1 - pred) * 100), 2)
-                location = "Brain Section" 
-                desc = "Abnormal tissue growth detected in the MRI scan. See the highlighted region."
+        # Get the highest accuracy model available
+        if 'multiclass' in models:
+            model = models.get('multiclass')
+            model_name = "Multi-Class MobileNetV2"
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img_resized = cv2.resize(img_rgb, (128, 128))
+            img_final = tf.keras.applications.mobilenet_v2.preprocess_input(np.array(img_resized))
+            img_final = np.expand_dims(img_final, axis=0)
+            
+            preds = model.predict(img_final)[0]
+            class_idx = np.argmax(preds)
+            confidence = round(float(preds[class_idx] * 100), 2)
+            
+            # Map index to class names (assuming standard Kaggle dataset order)
+            # 0: Glioma, 1: Meningioma, 2: No Tumor, 3: Pituitary
+            class_map = {
+                0: "Glioma Tumor ⚠️",
+                1: "Meningioma Tumor ⚠️",
+                2: "No Tumor Detected ✅",
+                3: "Pituitary Tumor ⚠️"
+            }
+            
+            result = class_map.get(class_idx, "Unknown Type")
+            
+            if class_idx != 2: # If it is a tumor
+                location = "Brain Section"
+                if class_idx == 0:
+                    desc = "Glioma detected. These tumors start in the glial cells that surround nerve cells."
+                elif class_idx == 1:
+                    desc = "Meningioma detected. This tumor arises from the meninges — the membranes that surround your brain."
+                else:
+                    desc = "Pituitary tumor detected. These are abnormal growths that develop in your pituitary gland."
                 
-                # Highlight the tumor in the original image using OpenCV
-                try:
-                    orig_img = cv2.imread(filepath)
-                    gray = cv2.cvtColor(orig_img, cv2.COLOR_BGR2GRAY)
-                    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-                    
-                    max_val = np.max(blur)
-                    # Adaptive thresholding: try to catch the brightest region which is often the tumor
-                    threshold_value = max(100, max_val * 0.7) 
-                    _, thresh = cv2.threshold(blur, threshold_value, 255, cv2.THRESH_BINARY)
-                    
-                    kernel = np.ones((5,5), np.uint8)
-                    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-                    
-                    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                    if contours:
-                        c = max(contours, key=cv2.contourArea)
-                        if cv2.contourArea(c) > 30: # Slightly lower threshold for area
-                            # Create an orange color for the tumor (BGR format in OpenCV)
-                            tumor_color = (100, 150, 255) # Light orange/peach
-                            
-                            # Draw an orange filled translucent overlay over the tumor area
-                            overlay = orig_img.copy()
-                            cv2.drawContours(overlay, [c], -1, tumor_color, -1)
-                            cv2.addWeighted(overlay, 0.4, orig_img, 0.6, 0, orig_img)
-                            
-                            # Draw a solid orange boundary line
-                            cv2.drawContours(orig_img, [c], -1, tumor_color, 2)
-                            
-                            # Find the center of the tumor to point the line
-                            M = cv2.moments(c)
-                            if M["m00"] != 0:
-                                cX = int(M["m10"] / M["m00"])
-                                cY = int(M["m01"] / M["m00"])
-                            else:
-                                x, y, w, h = cv2.boundingRect(c)
-                                cX, cY = x + w // 2, y + h // 2
-                                
-                            # Calculate line start point (upper left from tumor)
-                            start_x = max(10, cX - 60)
-                            start_y = max(20, cY - 80)
-                            
-                            # Draw the pointing line
-                            cv2.line(orig_img, (start_x, start_y), (cX, cY), (255, 255, 255), 1)
-                            
-                            # Add the "BRAIN TUMOR" label text
-                            text_x = max(5, start_x - 40)
-                            text_y = max(15, start_y - 5)
-                            cv2.putText(orig_img, "BRAIN TUMOR", (text_x, text_y), 
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
-                    
-                    highlighted_filename = f"tumor_{filename}"
-                    highlighted_filepath = os.path.join(app.config['UPLOAD_FOLDER'], highlighted_filename)
-                    cv2.imwrite(highlighted_filepath, orig_img)
-                    img_url = url_for('static', filename=f"uploads/{highlighted_filename}")
-                except Exception as e:
-                    print(f"Error drawing bounding box: {e}")
+                img_url = draw_highlight(filepath, filename)
             else:
-                result = "No Tumor Detected ✅"
-                confidence = round(float(pred * 100), 2)
                 location = None
                 desc = "Scan appears clear. No significant abnormalities."
+
+        elif 'efficientnet' in models:
+            model = models.get('efficientnet')
+            model_name = "EfficientNetB0"
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img_resized = cv2.resize(img_rgb, (224, 224))
+            img_final = tf.keras.applications.efficientnet.preprocess_input(np.array(img_resized))
+            img_final = np.expand_dims(img_final, axis=0)
+            pred = model.predict(img_final)[0][0]
+            if pred > 0.5:
+                result = "Tumor Detected ⚠️"
+                confidence = round(float(pred * 100), 2)
+                location = "Brain Section"
+                desc = "Abnormal tissue growth detected."
+                img_url = draw_highlight(filepath, filename)
+            else:
+                result = "No Tumor Detected ✅"
+                confidence = round(float((1 - pred) * 100), 2)
+                location = None
+                desc = "Scan clear."
+        
+        elif 'mobilenet' in models:
+            model = models.get('mobilenet')
+            model_name = "MobileNetV2"
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img_resized = cv2.resize(img_rgb, (128, 128))
+            img_final = tf.keras.applications.mobilenet_v2.preprocess_input(np.array(img_resized))
+            img_final = np.expand_dims(img_final, axis=0)
+            
+            pred = model.predict(img_final)[0][0]
+            if pred > 0.5:
+                result = "Tumor Detected ⚠️"
+                confidence = round(float(pred * 100), 2)
+                location = "Brain Section" 
+                desc = "Abnormal tissue growth detected in the MRI scan."
+                # Draw Highlight
+                img_url = draw_highlight(filepath, filename)
+            else:
+                result = "No Tumor Detected ✅"
+                confidence = round(float((1 - pred) * 100), 2)
+                location = None
+                desc = "Scan appears clear."
+        
+        elif 'resnet50' in models:
+            model = models.get('resnet50')
+            model_name = "ResNet50"
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img_resized = cv2.resize(img_rgb, (224, 224))
+            img_final = tf.keras.applications.resnet50.preprocess_input(np.array(img_resized).astype('float32'))
+            img_final = np.expand_dims(img_final, axis=0)
+            pred = model.predict(img_final)[0][0]
+            if pred > 0.5:
+                result = "Tumor Detected ⚠️"
+                confidence = round(float(pred * 100), 2)
+                location = "Brain Section"
+                desc = "Abnormal growth detected."
+                img_url = draw_highlight(filepath, filename)
+            else:
+                result = "No Tumor Detected ✅"
+                confidence = round(float((1 - pred) * 100), 2)
+                location = None
+                desc = "Scan clear."
         else:
             result = "Model Not Loaded"
             confidence = 0
@@ -429,7 +491,7 @@ def predict():
                                image=img_url, 
                                patient_name=patient_name, 
                                date=date,
-                               model_used=model_type.capitalize())
+                               model_used=model_name)
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Model Performance - Brain Tumor Detection</title>
+    <title>ResNet50 Performance - Brain Tumor Detection</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .metrics-grid {
@@ -117,32 +117,32 @@
 </div>
 
 <div class="glass-card" style="max-width: 750px;">
-    <h1>MobileNetV2 Performance Report</h1>
-    <p>Comprehensive evaluation metrics for the MobileNetV2 architecture on the brain tumor dataset.</p>
+    <h1 id="report-title">ResNet50 Performance Report</h1>
+    <p id="report-desc">Comprehensive evaluation metrics for the ResNet50 architecture on the brain tumor dataset. ResNet50 is a very deep, robust model that excels at capturing intricate patterns in MRI scans.</p>
 
     <!-- Metrics Grid -->
     <div class="metrics-grid">
         <div class="metric-card">
             <div class="metric-title">Accuracy</div>
-            <div class="metric-value" id="val-accuracy">96.3%</div>
+            <div class="metric-value" id="val-accuracy">97.00%</div>
         </div>
         <div class="metric-card">
             <div class="metric-title">Precision</div>
-            <div class="metric-value" id="val-precision">95.8%</div>
+            <div class="metric-value" id="val-precision">98.65%</div>
         </div>
         <div class="metric-card">
             <div class="metric-title">Recall</div>
-            <div class="metric-value" id="val-recall">97.1%</div>
+            <div class="metric-value" id="val-recall">97.33%</div>
         </div>
         <div class="metric-card">
             <div class="metric-title">F1-Measure</div>
-            <div class="metric-value" id="val-f1">96.4%</div>
+            <div class="metric-value" id="val-f1">97.99%</div>
         </div>
     </div>
 
     <!-- Confusion Matrix -->
     <div class="confusion-matrix">
-        <h3 style="margin-top: 0; color: var(--text-primary);" id="matrix-title">Confusion Matrix: MobileNet</h3>
+        <h3 style="margin-top: 0; color: var(--text-primary);" id="matrix-title">Confusion Matrix: ResNet50</h3>
         <table class="matrix-table">
             <tr>
                 <th>Actual \ Predicted</th>
@@ -151,19 +151,22 @@
             </tr>
             <tr>
                 <th>True Tumor</th>
-                <td class="cell-true" id="tp">142<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Positives</span></td>
+                <td class="cell-true" id="tp">146<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Positives</span></td>
                 <td class="cell-false" id="fn">4<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">False Negatives</span></td>
             </tr>
             <tr>
                 <th>True No Tumor</th>
-                <td class="cell-false" id="fp">7<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">False Positives</span></td>
-                <td class="cell-true" id="tn">165<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Negatives</span></td>
+                <td class="cell-false" id="fp">2<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">False Positives</span></td>
+                <td class="cell-true" id="tn">48<br><span style="font-size:12px; font-weight:normal; color:var(--text-secondary);">True Negatives</span></td>
             </tr>
         </table>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">Visualization of Confusion Matrix</p>
+            <img id="matrix-img" src="{{ url_for('static', filename='resnet50_cm.png') }}" alt="ResNet50 Confusion Matrix" style="width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid var(--card-border);">
+        </div>
     </div>
 </div>
-
-<!-- Static metrics for MobileNetV2 -->
 
 </body>
 </html>

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Model files
+*.h5
+
+# Training and evaluation outputs
+training_results/
+evaluation_results/
+reports/
+
+# Uploaded images
+static/uploads/
+
+# Database
+*.db

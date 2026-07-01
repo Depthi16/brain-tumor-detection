@@ -114,12 +114,12 @@
         {% if confidence > 0 %}
         <p>Confidence: {{ confidence }}%</p>
 
-        {% if location %}
-        <div style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 10px; margin-top: 20px;">
-            <h3 style="color: #ffcccc; margin-top: 0; margin-bottom: 10px;">📍 Location: {{ location }}</h3>
+        <div style="background: {{ 'rgba(255, 0, 0, 0.1)' if location else 'rgba(76, 175, 80, 0.1)' }}; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid {{ '#ff4d4d' if location else '#4CAF50' }};">
+            <h3 style="color: {{ '#ffcccc' if location else '#d4edda' }}; margin-top: 0; margin-bottom: 10px;">
+                {{ '📍 Location: ' + location if location else '📋 Diagnostic Summary' }}
+            </h3>
             <p style="color: white; font-size: 14px; margin: 0;">📝 {{ desc }}</p>
         </div>
-        {% endif %}
 
         {% if location %}
         <img src="{{ image }}" class="preview" alt="Detected Image Scan"
